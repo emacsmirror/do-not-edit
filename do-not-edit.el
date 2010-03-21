@@ -1,9 +1,9 @@
 ;;; do-not-edit.el --- read-only buffer for generated files
 
-;; Copyright 2009 Kevin Ryde
+;; Copyright 2009, 2010 Kevin Ryde
 ;;
 ;; Author: Kevin Ryde <user42@zip.com.au>
-;; Version: 4
+;; Version: 5
 ;; Keywords: convenience
 ;; URL: http://user42.tuxfamily.org/do-not-edit/index.html
 ;; EmacsWiki: CategoryFiles
@@ -46,6 +46,7 @@
 ;; Version 2 - more "Don't edit"s
 ;; Version 3 - add ppport.h form
 ;; Version 4 - add emacs autoload-rubric and a mozilla form
+;; Version 5 - new `do-not-edit-perl-blib'
 
 ;;; Code:
 
@@ -92,8 +93,8 @@ The do-not-edit.el home page is
 URL `http://user42.tuxfamily.org/do-not-edit/index.html'"
 
   (save-excursion
+    (goto-char (point-min))
     (let ((case-fold-search nil))
-      (goto-char (point-min))
       (when (re-search-forward do-not-edit-regexp
                                (save-excursion (forward-line 20) (point))
                                t)
@@ -103,6 +104,33 @@ URL `http://user42.tuxfamily.org/do-not-edit/index.html'"
 
 ;;;###autoload
 (custom-add-option 'find-file-hooks 'do-not-edit-readonly)
+
+;;;###autoload
+(defun do-not-edit-perl-blib ()
+  "If the buffer file is under a Perl \"blib\" then set read-only.
+This function is designed for use from `find-file-hooks'.
+
+It keeps you from editing files under an ExtUtils::MakeMaker
+/blib/ directory since the files there are copies from the
+working directory and will be overwritten by a further \"make\"
+or removed by \"make clean\".
+
+`file-truename' of the `buffer-file-name' is checked (when not
+nil), so in the unlikely case a blib file is a symlink to
+somewhere else then that target can still be edited through the
+link.
+
+If you really want to edit a blib file you can always `\\[toggle-read-only]'
+\(`toggle-read-only') in the usual way."
+
+  (when (and buffer-file-name
+             (let ((case-fold-search nil))
+               (string-match "/blib/" (file-truename buffer-file-name))))
+    (setq buffer-read-only t)
+    (message "Read-only under Perl blib")))
+
+;;;###autoload
+(custom-add-option 'find-file-hooks 'do-not-edit-perl-blib)
 
 (provide 'do-not-edit)
 

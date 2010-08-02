@@ -3,7 +3,7 @@
 ;; Copyright 2009, 2010 Kevin Ryde
 ;;
 ;; Author: Kevin Ryde <user42@zip.com.au>
-;; Version: 6
+;; Version: 7
 ;; Keywords: convenience
 ;; URL: http://user42.tuxfamily.org/do-not-edit/index.html
 ;; EmacsWiki: CategoryFiles
@@ -49,6 +49,7 @@
 ;; Version 5 - new `do-not-edit-perl-blib'
 ;; Version 6 - add perl AutoSplit form
 ;;           - do nothing if already readonly
+;; Version 7 - avoid xemacs21 file-truename error on file vs directory
 
 ;;; Code:
 
@@ -76,7 +77,7 @@
 
 ;;;###autoload
 (defun do-not-edit-readonly ()
-  "If the buffer has DO NOT EDIT then set it read-only.
+  "If the buffer says DO NOT EDIT then set it read-only.
 This function is designed for use from `find-file-hook'.
 
 It keeps you from editing generated files etc which announce
@@ -91,14 +92,20 @@ themselves near the start of the buffer as
    * automatically extracted   (Emacs `autoload-rubric')
    * autosplit run             (Perl AutoSplit.pm)
 
-If you really do want to edit you
-can always `\\[toggle-read-only]' \(`toggle-read-only') in the usual way.
+If you really do want to edit you can always `\\[toggle-read-only]'
+\(`toggle-read-only') in the usual way.
 
 The alternative is to remove \"w\" write permission from
-generated files.  Emacs makes the buffer read-only for read-only
-files.  But perms can be annoying if they make \"rm\" query about
-removing; and code generating the file may have to know to set
-writable/unwritable when updating.
+generated files.  Emacs automatically makes the buffer read-only
+for files which are read-only.  But perms can be annoying if they make
+\"rm\" etc query about removing; and code generating the file may
+have to know to set writable/unwritable when updating.
+
+`do-not-edit-readonly' can be bad for lisp code which updates a
+generated file by visiting it with a plain `find-file'.  If
+`do-not-edit-readonly' sets the buffer read-only then the code
+will probably throw an error.  Initial file creation is fine, but
+an update of something with a DO NOT EDIT in it fails.
 
 The do-not-edit.el home page is
 URL `http://user42.tuxfamily.org/do-not-edit/index.html'"
@@ -117,26 +124,33 @@ URL `http://user42.tuxfamily.org/do-not-edit/index.html'"
 
 ;;;###autoload
 (defun do-not-edit-perl-blib ()
-  "If the buffer file is under a Perl \"blib\" then set read-only.
+  "If the buffer file is under a Perl \"blib\" dir then set read-only.
 This function is designed for use from `find-file-hook'.
 
 It keeps you from editing files under an ExtUtils::MakeMaker
-/blib/ directory since the files there are copies from the
-working directory and will be overwritten by the next \"make\",
-or removed by \"make clean\".
+/blib directory.  The files there are copies from the working
+directory and will be overwritten by the next \"make\" or removed
+by \"make clean\".
 
-`buffer-file-name' is checked (when not nil), with
-`file-truename' applied to notice when a symlink is going into a
-blib dir (should be readonly) or a blib file is actually a
-symlink to elsewhere (needn't be readonly).
+`buffer-file-name' is checked (when not nil) for \"/blib/\".
+`file-truename' is applied so as to notice filenames elsewhere
+which are symlinks into a blib dir, or names in a blib which are
+symlinks pointing to an actual file elsewhere.
 
 If you really want to edit a blib file you can always `\\[toggle-read-only]'
 \(`toggle-read-only') in the usual way."
 
+  ;; xemacs 21.4.22 `file-truename' throws an error if /foo/bar/quux has
+  ;; "foo" or "bar" as files instead of directories.  Better the emacs way
+  ;; of quietly allowing that, but for now trap and use the plain name.
+  ;;
   (unless buffer-read-only
     (when (and buffer-file-name
                (let ((case-fold-search nil))
-                 (string-match "/blib/" (file-truename buffer-file-name))))
+                 (string-match "/blib/"
+                               (condition-case nil
+                                   (file-truename buffer-file-name)
+                                 (error buffer-file-name)))))
       (setq buffer-read-only t)
       (message "Read-only under Perl blib"))))
 

@@ -1,9 +1,9 @@
 ;;; do-not-edit.el --- read-only buffer for generated files
 
-;; Copyright 2009, 2010 Kevin Ryde
+;; Copyright 2009, 2010, 2011 Kevin Ryde
 ;;
 ;; Author: Kevin Ryde <user42@zip.com.au>
-;; Version: 7
+;; Version: 8
 ;; Keywords: convenience
 ;; URL: http://user42.tuxfamily.org/do-not-edit/index.html
 ;; EmacsWiki: CategoryFiles
@@ -28,6 +28,10 @@
 ;; or "DO NOT MODIFY", to keep you from accidentally editing generated
 ;; files.  See the `do-not-edit-readonly' docstring below for more.
 
+;;; Emacsen:
+
+;; Designed for Emacs 21 up, works in XEmacs 21 and Emacs 20.
+
 ;;; Install:
 
 ;; Put do-not-edit.el in one of your `load-path' directories, and in
@@ -50,6 +54,7 @@
 ;; Version 6 - add perl AutoSplit form
 ;;           - do nothing if already readonly
 ;; Version 7 - avoid xemacs21 file-truename error on file vs directory
+;; Version 8 - add Xatom.h form
 
 ;;; Code:
 
@@ -58,6 +63,7 @@
     (concat
      ;; Emacs loaddefs etc, per `autoload-rubric' function
      ;; Only when file starts with this form.
+     ;;               v--match 1
      "\\`;;; .* --- \\(automatically extracted\\)"  ;; <-- match 1
 
      ;; Perl AutoSplit.pm
@@ -65,6 +71,11 @@
      ;; first 25 lines so doesn't get caught.
      "\\|"                                  ;; v-- match 2
      "^# Changes made here will be lost when \\(autosplit\\) is run again"
+
+     ;; X11 Xatoms.h and X server source initatoms.c
+     ;; except not with \ following, so as not to pick up "buildatoms" script
+     "\\|"
+     "THIS IS A GENERATED FILE[^\\]"
 
      "\\|"
      (regexp-opt '("DO NOT EDIT"
@@ -77,7 +88,7 @@
 
 ;;;###autoload
 (defun do-not-edit-readonly ()
-  "If the buffer says DO NOT EDIT then set it read-only.
+  "Set buffer read-only if it says DO NOT EDIT.
 This function is designed for use from `find-file-hook'.
 
 It keeps you from editing generated files etc which announce
@@ -91,15 +102,16 @@ themselves near the start of the buffer as
    * Do not edit.              (various mozilla)
    * automatically extracted   (Emacs `autoload-rubric')
    * autosplit run             (Perl AutoSplit.pm)
+   * THIS IS A GENERATED FILE  (X11 Xatom.h)
 
 If you really do want to edit you can always `\\[toggle-read-only]'
 \(`toggle-read-only') in the usual way.
 
-The alternative is to remove \"w\" write permission from
+It also works to simply remove \"w\" write permission from
 generated files.  Emacs automatically makes the buffer read-only
-for files which are read-only.  But perms can be annoying if they make
-\"rm\" etc query about removing; and code generating the file may
-have to know to set writable/unwritable when updating.
+for files which are read-only.  But perms can be annoying if they
+make \"rm -i\" etc query about removing; and code generating the
+file may have to know to set writable/unwritable when updating.
 
 `do-not-edit-readonly' can be bad for lisp code which updates a
 generated file by visiting it with a plain `find-file'.  If
@@ -168,6 +180,8 @@ If you really want to edit a blib file you can always `\\[toggle-read-only]'
   ;; xemacs21
   (custom-add-option 'find-file-hooks 'do-not-edit-readonly)
   (custom-add-option 'find-file-hooks 'do-not-edit-perl-blib))
+
+;; LocalWords: ExtUtils MakeMaker ParseXS Devel PPPort mozilla autosplit AutoSplit blib Xatom symlinks docstring unwritable dir filenames
 
 (provide 'do-not-edit)
 

@@ -1,9 +1,9 @@
 ;;; do-not-edit.el --- read-only buffer for generated files
 
-;; Copyright 2009, 2010, 2011, 2012, 2013 Kevin Ryde
+;; Copyright 2009, 2010, 2011, 2012, 2013, 2015 Kevin Ryde
 ;;
-;; Author: Kevin Ryde <user42@zip.com.au>
-;; Version: 14
+;; Author: Kevin Ryde <user42_kevin@yahoo.com.au>
+;; Version: 15
 ;; Keywords: convenience, read-only
 ;; URL: http://user42.tuxfamily.org/do-not-edit/index.html
 ;; EmacsWiki: CategoryFiles
@@ -61,6 +61,7 @@
 ;; Version 12 - exception for package.el autoloads
 ;; Version 13 - oops, allow for package-user-dir not yet loaded
 ;; Version 14 - SWIG "automatically generated"
+;; Version 15 - new email
 
 ;;; Code:
 
@@ -99,7 +100,7 @@
   "Pattern used by `do-not-edit-readonly'.
 This is an internal part of do-not-edit.el.  Normally the whole
 of the regexp match is displayed in the do-not-edit message as
-the reason for read-only, but the first couple of \\(..\\) groups
+the reason for read-only, but the first couple of \\=\\(..\\=\\) groups
 are short special cases to display less than the whole.")
 
 ;;;###autoload
@@ -227,7 +228,7 @@ If you really want to edit a blib file you can always `C-x C-q'
 
 ;; LocalWords: ExtUtils MakeMaker ParseXS Devel PPPort mozilla autosplit
 ;; LocalWords: AutoSplit blib Xatom symlinks docstring unwritable dir
-;; LocalWords: filenames el xdvirc elpa autoloads
+;; LocalWords: filenames el xdvirc elpa autoloads rm pm
 
 (provide 'do-not-edit)
 
